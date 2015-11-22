@@ -26,6 +26,8 @@ var _ = require("underscore"),
     util = require("util"),
     Logger = require("bunyan"),
     connect = require("connect"),
+    session = require("express-session"),
+    cookieParser = require("cookie-parser"),
     Browser = require("zombie"),
     Databank = databank.Databank;
 
@@ -41,7 +43,7 @@ suite.addBatch({
         },
         "and we apply it to the connect module": {
             topic: function(middleware) {
-                return middleware(connect);
+                return middleware(session);
             },
             "it works": function(DatabankStore) {
                 assert.isFunction(DatabankStore);
@@ -80,8 +82,8 @@ suite.addBatch({
 			var cb = this.callback,
 			    app = connect();
 
-			app.use(connect.cookieParser());
-			app.use(connect.session({secret: "test", store: store}));
+			app.use(cookieParser());
+			app.use(session({secret: "test", store: store}));
 
 			app.use(function(req, res) {
 			    var cb;
@@ -100,6 +102,8 @@ suite.addBatch({
 				});
 			    }
 			});
+            
+            console.log("hellow");
 
 			app.listen(1516, function() {
 			    cb(null, app);
