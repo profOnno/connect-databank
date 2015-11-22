@@ -103,7 +103,7 @@ suite.addBatch({
                             var cb = this.callback;
                             setTimeout(function() {
                                 cb(null);
-                            }, 8000);
+                            }, 9000);
                         },
                         "it works": function(err) {
                             assert.ifError(err);
@@ -135,9 +135,7 @@ suite.addBatch({
                                     setTimeout(function() {
                                         console.log("got back from 6 seconds");
                                         cb(null);
-                                    }, 3000); //was 6000
-                                    
-                                    //cb(null);
+                                    }, 6000);
                                 },
                                 "it works": function(err) {
                                     assert.ifError(err);
