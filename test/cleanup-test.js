@@ -49,28 +49,30 @@ suite.addBatch({
             },
             "and we instantiate a store with a 5 second cleanup interval": {
                 topic: function(DatabankStore) {
-		    var callback = this.callback,
-		        db = Databank.get(tc.driver, tc.params);
+		            var callback = this.callback,
+                        db = Databank.get(tc.driver, tc.params);
 
-		    db.connect(tc.params, function(err) {
-			var store;
-			if (err) {
-			    callback(err, null);
-			} else {
-			    try {
-				store = new DatabankStore(db, null, 5000);
-				callback(null, store);
-			    } catch (e) {
-				callback(e, null);
-			    }
-			}
-		    });
-		},
+                    db.connect(tc.params, function(err) {
+                        var store;
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            try {
+                                store = new DatabankStore(db, null, 5000);
+                                callback(null, store);
+                            } catch (e) {
+                                callback(e, null);
+                            }
+                        }
+                    });
+                },
                 teardown: function(store) {
-		    if (store && store.bank && store.bank.disconnect) {
-			store.bank.disconnect(function(err) {});
-		    }
-		},
+                    if (store && store.bank && store.bank.disconnect) {
+                        store.bank.disconnect(function(err) {});
+                    }
+                    store.close();
+
+                },
                 "it works": function(err, store) {
                     assert.ifError(err);
                     assert.isObject(store);
@@ -82,11 +84,13 @@ suite.addBatch({
                         Step(
                             function() {
                                 var i, group = this.group(), now = Date.now();
-                                for (i = 0; i < 5000; i++) {
+                                for (i = 0; i < 5000; i++) {//was 5000
                                     store.set("OLD"+i, {cookie: {expires: now + 10000}, number: i}, group());
                                 }
+                                store.set("OLD"+i, {cookie: {expires: now + 10000}, number: i}, this);
                             },
                             function(err, sessions) {
+                                console.log("got back");
                                 cb(err);
                             }
                         );
@@ -99,7 +103,7 @@ suite.addBatch({
                             var cb = this.callback;
                             setTimeout(function() {
                                 cb(null);
-                            }, 9000);
+                            }, 8000);
                         },
                         "it works": function(err) {
                             assert.ifError(err);
@@ -111,11 +115,12 @@ suite.addBatch({
                                 Step(
                                     function() {
                                         var i, group = this.group(), now = Date.now();
-                                        for (i = 0; i < 5000; i++) {
+                                        for (i = 0; i < 5000; i++) { //was 5000
                                             store.set("NEW"+i, {cookie: {expires: now + 10000}, number: i + 5000, sid: "NEW"+i}, group());
                                         }
                                     },
                                     function(err) {
+                                        console.log("got back from a bunch more sessions");
                                         cb(err);
                                     }
                                 );
@@ -125,19 +130,25 @@ suite.addBatch({
                             },
                             "and we wait 6 more seconds (total 15)": {
                                 topic: function(store) {
+                                    console.log("wait 6 more seconds?");
                                     var cb = this.callback;
                                     setTimeout(function() {
+                                        console.log("got back from 6 seconds");
                                         cb(null);
-                                    }, 6000);
+                                    }, 3000); //was 6000
+                                    
+                                    //cb(null);
                                 },
                                 "it works": function(err) {
                                     assert.ifError(err);
                                 },
                                 "and we get all the available sessions": {
                                     topic: function(store) {
+                                        console.log("we get alllllll");
                                         store.all(this.callback);
                                     },
                                     "it works": function(err, sessions) {
+                                        //console.log(sessions);
                                         assert.ifError(err);
                                         assert.isArray(sessions);
                                     },
