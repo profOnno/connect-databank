@@ -90,7 +90,6 @@ suite.addBatch({
                                 store.set("OLD"+i, {cookie: {expires: now + 10000}, number: i}, this);
                             },
                             function(err, sessions) {
-                                console.log("got back");
                                 cb(err);
                             }
                         );
@@ -115,12 +114,11 @@ suite.addBatch({
                                 Step(
                                     function() {
                                         var i, group = this.group(), now = Date.now();
-                                        for (i = 0; i < 5000; i++) { //was 5000
+                                        for (i = 0; i < 5000; i++) { 
                                             store.set("NEW"+i, {cookie: {expires: now + 10000}, number: i + 5000, sid: "NEW"+i}, group());
                                         }
                                     },
                                     function(err) {
-                                        console.log("got back from a bunch more sessions");
                                         cb(err);
                                     }
                                 );
@@ -130,10 +128,8 @@ suite.addBatch({
                             },
                             "and we wait 6 more seconds (total 15)": {
                                 topic: function(store) {
-                                    console.log("wait 6 more seconds?");
                                     var cb = this.callback;
                                     setTimeout(function() {
-                                        console.log("got back from 6 seconds");
                                         cb(null);
                                     }, 6000);
                                 },
@@ -142,11 +138,9 @@ suite.addBatch({
                                 },
                                 "and we get all the available sessions": {
                                     topic: function(store) {
-                                        console.log("we get alllllll");
                                         store.all(this.callback);
                                     },
                                     "it works": function(err, sessions) {
-                                        //console.log(sessions);
                                         assert.ifError(err);
                                         assert.isArray(sessions);
                                     },
