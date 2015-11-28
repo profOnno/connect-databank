@@ -26,7 +26,7 @@ var assert = require("assert"),
     Databank = databank.Databank;
 
 var suite = vows.describe("store module interface");
-
+/*
 var StreamMock = function(options) {
     this.writable = true;
     this.callback = null;
@@ -71,6 +71,7 @@ StreamMock.prototype.setCallback = function(callback) {
     //console.log("setting new callback: "+callback);
     mock.callback = callback;
 };
+*/
 
 suite.addBatch({
     "when we require the connect-databank module": {
@@ -92,14 +93,12 @@ suite.addBatch({
                 topic: function(DatabankStore) {
                     var callback = this.callback,
                         db = Databank.get("memory", {}),
-                        str = new StreamMock(),
+                        //str = new StreamMock(),
+                        str = new stream.PassThrough(),
                         //log = new Logger({name: "connect-databank-test", stream: str});
                         log = Logger.createLogger({name: "connect-databank-test", stream: str});
 
                     log.level("trace"); //else the callback doesn't come back
-
-                    //str.write("hello"); //this works
-                    //log.info("hello"); //this also works
 
                     db.connect({}, function(err) {
                         var store;
@@ -128,8 +127,11 @@ suite.addBatch({
                 },
                 "and we set() a session": {
                     topic: function(store, str) {
-                        console.log("gonna set() a sess");
-                        str.setCallback(this.callback);
+                        var cb = this.callback;
+                        //str.setCallback(this.callback);
+                        str.on("data",function(msg){
+                            cb(null, msg);
+                        });
                         store.set("ID1", {cookie: {expires: 0}, example: "foo", sid: "ID1"}, function(err) {});
                     },
                     "it writes to the log": function(err, written) {
@@ -158,10 +160,14 @@ suite.addBatch({
                     },
                     "and we get() a session": {
                         topic: function(setlog, store, str) {
+                            var cb = this.callback;
 
-                            console.log(" get () a sess");
-                            str.setCallback(this.callback);
-                            store.get("ID1", function(err) { console.log("menno was hier inaahrge:"+err)}); //this gows well...but were waiting for a log callback...
+                            //str.setCallback(this.callback);
+                            str.removeAllListeners("data");
+                            str.on("data",function(msg){
+                                cb(null,msg);
+                            });
+                            store.get("ID1", function(err) {}); 
                         },
                         "it writes to the log": function(err, written) {
                             assert.ifError(err);
@@ -187,7 +193,12 @@ suite.addBatch({
                         },
                         "and we destroy() a session": {
                             topic: function(getlog, setlog, store, str) {
-                                str.setCallback(this.callback);
+                                var cb = this.callback;
+                                //str.setCallback(this.callback);
+                                str.removeAllListeners("data");
+                                str.on("data",function(msg){
+                                    cb(null, msg);
+                                });
                                 store.destroy("ID1", function(err) {});
                             },
                             "it writes to the log": function(err, written) {
@@ -243,7 +254,6 @@ suite.addBatch({
                             callback(err, null);
                         } else {
                             try {
-                                console.log("menno was hier");
                                 store = new DatabankStore(db);
                                 callback(null, store);
                             } catch (e) {
