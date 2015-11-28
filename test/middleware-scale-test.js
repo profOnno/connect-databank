@@ -29,7 +29,10 @@ var _ = require("underscore"),
     session = require("express-session"),
 //    cookieParser = require("cookie-parser"),
     Browser = require("zombie"),
-    Databank = databank.Databank;
+    Databank = databank.Databank,
+    http = require("http"),
+    server = null;
+//    Databank = require("../mstore");
 
 var suite = vows.describe("middleware interface");
 
@@ -52,6 +55,7 @@ suite.addBatch({
                 topic: function(DatabankStore) {
                     var callback = this.callback,
                     db = Databank.get("memory", {});
+                    //db = new Databank();
 
                     db.connect({}, function(err) {
                         var store;
@@ -83,18 +87,25 @@ suite.addBatch({
                         var cb = this.callback,
                             app = connect();
 
-                        //app.use(cookieParser());
-                        app.use(session({secret: "test", saveUninitialized: true, resave: false, store: store}));
+                        app.use(session({
+                            secret: "test",
+                            saveUninitialized: true,
+                            resave: false,
+                            store: store
+                        }));
 
                         app.use(function(req, res) {
                             var cb;
+
                             req.session.lastUrl = req.originalUrl;
+
                             if (req.session.hits) {
                                 req.session.hits++;
                             } else {
                                 req.session.hits = 1;
                             }
                             res.end("Hello, world! :"+req.session.hits);
+                            
                             // Leak the session out the side door
                             if (app.callback) {
                                 cb = app.callback;
@@ -104,11 +115,12 @@ suite.addBatch({
                             }
                         });
             
-                        console.log("hellow");
-
-                        app.listen(1516, function() {
+                        server = http.createServer(app).listen(1516, function() {
                             cb(null, app);
                         });
+                    },
+                    teardown: function(){
+                        if(server)server.close();
                     },
                     "it works": function(err, app) {
                         assert.ifError(err);
@@ -118,7 +130,7 @@ suite.addBatch({
                         topic: function(app, store) {
 
                             var callback = this.callback,
-                                MAXBROWSERS = 1,//5,//100,
+                                MAXBROWSERS = 100,
                                 MAXACTIONS = 20,
                                 MAXPAGE = 10000,
                                 browsers = [],
@@ -134,7 +146,7 @@ suite.addBatch({
                                         return decodeURIComponent(objs[0].value).substr(2, 32);
                                     }
                                 },
-                                /*wanderAround = function(br, id, pagesLeft, callback) {
+                                wanderAround = function(br, id, pagesLeft, callback) {
                                     var p = Math.floor(Math.random() * MAXPAGE),
                                         oldSid = sidOf(br);
                                         br.visit("http://localhost:1516/"+p, function(err) {
@@ -149,63 +161,34 @@ suite.addBatch({
                                                 wanderAround(br, id, pagesLeft - 1, callback);
                                             }
                                         });
-                                    };*/
-                                wanderAround = function (br, id, pagesLeft , callback){
-                                    var p = Math.floor(Math.random() * MAXPAGE),
-                                        oldSid = sidOf(br);
-
-                                    console.log("wandering..."+pagesLeft+" sid:"+oldSid);
-
-                                    Step(
-                                        function(){
-                                            console.log("visit..");
-                                            br.visit("http://localhost:1516/"+p, this);
-                                        },
-                                        function(err){
-                                            console.log("back from visit");
-                                            console.log(br.html());
-                                            if (err) {
-                                                console.log("err:"+err);
-                                                callback(err, null);
-                                            } else if (pagesLeft == 1){
-                                                lasts[id] = p;
-                                                callback(null, br);
-                                            } else if (oldSid && sidOf(br) != oldSid){
-                                                callback(new Error("SID of browser changed from " +oldSid + " to " + sidOf(br)));
-                                            } else {
-                                                console.log("gonna go recursive");
-                                                wanderAround(br, id, pagesLeft - 1, callback);
-                                            }
-                                        }
-                                    );
-                                }
+                                    };
 
 
+                            Step(
+                                function() {
+                                    var group = this.group(), i;
 
-                                Step(
-                                    function() {
-                                        var group = this.group(), i;
-                                        for (i = 0; i < MAXBROWSERS; i++) {
-                                            counts[i] = 10 + Math.floor(Math.random()*20);
-                                            wanderAround(new Browser(), i, counts[i], group());
-                                        }
-                                    },
-                                    function(err, browsers, ps) {
-                                        var group = this.group();
-                                        if (err) throw err;
-                                        _.each(browsers, function(br) {
-                                            var sid = sidOf(br);
-                                            store.get(sid, group());
-                                        });
-                                    },
-                                    function(err, sessions) {
-                                        if (err) {
-                                            callback(err);
-                                        } else {
-                                            callback(err, lasts, counts, sessions);
-                                        }
+                                    for (i = 0; i < MAXBROWSERS; i++) {
+                                        counts[i] = 10 + Math.floor(Math.random()*20);
+                                        wanderAround(new Browser, i, counts[i], group());
                                     }
-                                );
+                                },
+                                function(err, browsers, ps) {
+                                    var group = this.group();
+                                    if (err) throw err;
+                                    _.each(browsers, function(br) {
+                                        var sid = sidOf(br);
+                                        store.get(sid, group());
+                                    });
+                                },
+                                function(err, sessions) {
+                                    if (err) {
+                                        callback(err);
+                                    } else {
+                                        callback(err, lasts, counts, sessions);
+                                    }
+                                }
+                            );
                         },
                         "it works": function(err, lasts, counts, sessions) {
                             assert.ifError(err);

@@ -25,8 +25,11 @@ var assert = require("assert"),
     util = require("util"),
     Logger = require("bunyan"),
     connect = require("connect"),
+    session = require("express-session"),
     Browser = require("zombie"),
-    Databank = databank.Databank;
+    Databank = databank.Databank,
+    http = require("http"),
+    server = null;
 
 var suite = vows.describe("middleware interface");
 
@@ -40,7 +43,7 @@ suite.addBatch({
         },
         "and we apply it to the connect module": {
             topic: function(middleware) {
-                return middleware(connect);
+                return middleware(session);
             },
             "it works": function(DatabankStore) {
                 assert.isFunction(DatabankStore);
@@ -75,41 +78,49 @@ suite.addBatch({
                 },
 		"and we start an app using the store": {
 		    topic: function(store) {
-			var cb = this.callback,
-			    app = connect();
+                var cb = this.callback,
+                    app = connect();
 
-			// We use this to leak the session data
+                // We use this to leak the session data
 
-			app.callback = null;
-			app.setCallback = function(callback) {
-			    this.callback = callback;
-			};
+                app.callback = null;
+                app.setCallback = function(callback) {
+                    this.callback = callback;
+                };
 
-			app.use(connect.cookieParser());
-			app.use(connect.session({secret: "test", store: store}));
+                app.use(session({
+                    secret: "test",
+                    saveUninitialized: false, //should be false default... cookie law europe
+                    resave: false,
+                    store: store
+                }));
 
-			app.use(function(req, res) {
-			    var cb;
-			    req.session.lastUrl = req.originalUrl;
-			    if (req.session.hits) {
-				req.session.hits++;
-			    } else {
-				req.session.hits = 1;
-			    }
-			    res.end("Hello, world!");
-			    // Leak the session out the side door
-			    if (app.callback) {
-				cb = app.callback;
-				process.nextTick(function() {
-				    cb(null, req.session);
-				});
-			    }
-			});
+                app.use(function(req, res) {
+                    var cb;
+                    req.session.lastUrl = req.originalUrl;
+                    if (req.session.hits) {
+                        req.session.hits++;
+                    } else {
+                        req.session.hits = 1;
+                    }
+                    res.end("Hello, world!");
+                    // Leak the session out the side door
+                    if (app.callback) {
+                        cb = app.callback;
+                        process.nextTick(function() {
+                            cb(null, req.session);
+                        });
+                    }
+                });
 
-			app.listen(1516, function() {
-			    cb(null, app);
-			});
+                //create a server we can close
+                server = http.createServer(app).listen(1516, function() {
+                    cb(null, app);
+                });
 		    },
+            teardown: function(){
+                if(server) server.close();
+            },
 		    "it works": function(err, app) {
 			assert.ifError(err);
 			assert.ok(app);

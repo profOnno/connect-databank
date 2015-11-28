@@ -87,17 +87,17 @@ suite.addBatch({
         },
         "and we apply it to the connect module": {
             topic: function(middleware) {
-                var session = require("session");
+                var session = require("express-session");
                 return middleware(session);
             },
             "it works": function(DatabankStore) {
                 assert.isFunction(DatabankStore);
             },
-	    "it has a schema attribute": function(DatabankStore) {
-		assert.isFunction(DatabankStore);
+            "it has a schema attribute": function(DatabankStore) {
+                assert.isFunction(DatabankStore);
                 assert.isObject(DatabankStore.schema);
-		assert.includes(DatabankStore.schema, "session");
-	    },
+                assert.includes(DatabankStore.schema, "session");
+            },
             "and we instantiate a store": {
                 topic: makeStore,
                 teardown: breakStore,
@@ -183,8 +183,8 @@ suite.addBatch({
         },
         "and we apply it to the connect module": {
             topic: function(middleware) {
-                var connect = require("connect");
-                return middleware(connect);
+                var session = require("express-session");
+                return middleware(session);
             },
             "it works": function(DatabankStore) {
                 assert.isFunction(DatabankStore);
@@ -220,8 +220,8 @@ suite.addBatch({
         },
         "and we apply it to the connect module": {
             topic: function(middleware) {
-                var connect = require("connect");
-                return middleware(connect);
+                var session = require("express-session");
+                return middleware(session);
             },
             "it works": function(DatabankStore) {
                 assert.isFunction(DatabankStore);
@@ -314,8 +314,8 @@ suite.addBatch({
         },
         "and we apply it to the connect module": {
             topic: function(middleware) {
-                var connect = require("connect");
-                return middleware(connect);
+                var session = require("express-session");
+                return middleware(session);
             },
             "it works": function(DatabankStore) {
                 assert.isFunction(DatabankStore);
@@ -439,8 +439,8 @@ suite.addBatch({
         },
         "and we apply it to the connect module": {
             topic: function(middleware) {
-                var connect = require("connect");
-                return middleware(connect);
+                var session = require("express-session");
+                return middleware(session);
             },
             "it works": function(DatabankStore) {
                 assert.isFunction(DatabankStore);
@@ -524,8 +524,8 @@ suite.addBatch({
         },
         "and we apply it to the connect module": {
             topic: function(middleware) {
-                var connect = require("connect");
-                return middleware(connect);
+                var session = require("express-session");
+                return middleware(session);
             },
             "it works": function(DatabankStore) {
                 assert.isFunction(DatabankStore);
