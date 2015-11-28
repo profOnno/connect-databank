@@ -94,7 +94,7 @@ suite.addBatch({
                             } else {
                                 req.session.hits = 1;
                             }
-                            res.end("Hello, world!");
+                            res.end("Hello, world! :"+req.session.hits);
                             // Leak the session out the side door
                             if (app.callback) {
                                 cb = app.callback;
@@ -118,7 +118,7 @@ suite.addBatch({
                         topic: function(app, store) {
 
                             var callback = this.callback,
-                                MAXBROWSERS = 100,
+                                MAXBROWSERS = 1,//5,//100,
                                 MAXACTIONS = 20,
                                 MAXPAGE = 10000,
                                 browsers = [],
@@ -130,10 +130,11 @@ suite.addBatch({
                                     if (!objs || objs.length === 0) {
                                         return null;
                                     } else {
-                                        return decodeURIComponent(objs[0].value).substr(2, 24);
+                                        //return decodeURIComponent(objs[0].value).substr(2, 24);
+                                        return decodeURIComponent(objs[0].value).substr(2, 32);
                                     }
                                 },
-                                wanderAround = function(br, id, pagesLeft, callback) {
+                                /*wanderAround = function(br, id, pagesLeft, callback) {
                                     var p = Math.floor(Math.random() * MAXPAGE),
                                         oldSid = sidOf(br);
                                         br.visit("http://localhost:1516/"+p, function(err) {
@@ -148,7 +149,38 @@ suite.addBatch({
                                                 wanderAround(br, id, pagesLeft - 1, callback);
                                             }
                                         });
-                                    };
+                                    };*/
+                                wanderAround = function (br, id, pagesLeft , callback){
+                                    var p = Math.floor(Math.random() * MAXPAGE),
+                                        oldSid = sidOf(br);
+
+                                    console.log("wandering..."+pagesLeft+" sid:"+oldSid);
+
+                                    Step(
+                                        function(){
+                                            console.log("visit..");
+                                            br.visit("http://localhost:1516/"+p, this);
+                                        },
+                                        function(err){
+                                            console.log("back from visit");
+                                            console.log(br.html());
+                                            if (err) {
+                                                console.log("err:"+err);
+                                                callback(err, null);
+                                            } else if (pagesLeft == 1){
+                                                lasts[id] = p;
+                                                callback(null, br);
+                                            } else if (oldSid && sidOf(br) != oldSid){
+                                                callback(new Error("SID of browser changed from " +oldSid + " to " + sidOf(br)));
+                                            } else {
+                                                console.log("gonna go recursive");
+                                                wanderAround(br, id, pagesLeft - 1, callback);
+                                            }
+                                        }
+                                    );
+                                }
+
+
 
                                 Step(
                                     function() {
