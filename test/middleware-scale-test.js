@@ -130,7 +130,7 @@ suite.addBatch({
                         topic: function(app, store) {
 
                             var callback = this.callback,
-                                MAXBROWSERS = 100,
+                                MAXBROWSERS = 80, //100 is to much zombies
                                 MAXACTIONS = 20,
                                 MAXPAGE = 10000,
                                 browsers = [],
@@ -170,7 +170,7 @@ suite.addBatch({
 
                                     for (i = 0; i < MAXBROWSERS; i++) {
                                         counts[i] = 10 + Math.floor(Math.random()*20);
-                                        wanderAround(new Browser, i, counts[i], group());
+                                        wanderAround(new Browser({waitDuration: 30*1000}), i, counts[i], group());
                                     }
                                 },
                                 function(err, browsers, ps) {
