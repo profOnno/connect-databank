@@ -9,7 +9,8 @@
     "main": "./lib/connect-databank",
     "repository": {
         "type": "git",
-        "url": "https://github.com/evanp/connect-databank.git"
+        "#url": "https://github.com/evanp/connect-databank.git"
+        "url": "https://github.com/profOnno/connect-databank.git"
     },
     "keywords": [
         "connect",
@@ -17,16 +18,16 @@
         "databank"
     ],
     "dependencies" : {
-        "async": "0.2.x",
-	"underscore":  "1.4.x",
-	"databank":  "0.19.x",
+        "async": "1.5.x",
+        "underscore":  "1.8.x",
+        "databank":  "profOnno/databank",
         "node-uuid": "1.4.x"
     },
     "devDependencies": {
         "vows":  "0.8.x",
         "connect": "3.x.x",
-        "express-session": "x.x.x",
-        "zombie": "3.1.x",
+        "express-session": "1.x.x",
+        "zombie": "2.x.x",
         "bunyan": "1.5.x",
         "step": "0.0.x"
     },  
